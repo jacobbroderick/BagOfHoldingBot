@@ -9,7 +9,6 @@ from tabulate import tabulate
 
 from models import Base, Event, Member, Attendance
 
-TOKEN = 'NTg0MTU5NjY4NzE3MzU1MDEz.XRGYQA.SRZLllwr-VfCC961d5594_mM3es'
 
 engine = create_engine('mysql+pymysql://jacob:password@localhost:3306/bag', echo=False)
 Session = sessionmaker(bind=engine)
