@@ -1,0 +1,5 @@
+discord
+sqlalchemy
+tabulate
+pymysql
+cryptography==2.1.4

@@ -10,6 +10,11 @@ services:
       MYSQL_ROOT_PASSWORD: password
     volumes:
       - database://C/Users/Jacob/devel/discBots/bagOHolds/data
+  bot:
+    build: .
+    container_name: bagohold
+    links:
+      - "db:database"
     
 volumes:
   database:
