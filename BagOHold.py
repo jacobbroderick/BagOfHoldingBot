@@ -1,5 +1,5 @@
 # Work with Python 3.6
-from os import getenv
+import configparser
 import discord
 from discord.ext import commands
 from sqlalchemy import engine, create_engine
@@ -10,7 +10,17 @@ from tabulate import tabulate
 from models import Base, Event, Member, Attendance
 
 
-engine = create_engine('mysql+pymysql://jacob:password@localhost:3306/bag', echo=False)
+config = configparser.ConfigParser()
+
+config.read('config.ini')
+
+TOKEN = config['DEFAULT']['BotToken']
+
+print(TOKEN)
+
+connectionString = 'mysql+pymysql://{}:{}@{}:3306/bag'.format(config['DEFAULT']['DBUser'], config['DEFAULT']['DBPass'], config['DEFAULT']['DBHost'])
+
+engine = create_engine(connectionString , echo=False)
 Session = sessionmaker(bind=engine)
 session = Session()
 

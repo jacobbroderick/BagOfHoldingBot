@@ -1,0 +1,15 @@
+version: '3'
+services:
+  db:
+    image: mysql
+    container_name: db
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - database://C/Users/Jacob/devel/discBots/bagOHolds/data
+    
+volumes:
+  database:
