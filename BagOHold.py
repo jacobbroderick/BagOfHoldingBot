@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from tabulate import tabulate
 
-from models import Base, Event, Member, Attendance
+from models import Base,  Member, Bag, BagItem 
 
 
 config = configparser.ConfigParser()
@@ -31,29 +31,48 @@ if not engine.dialect.has_table(engine, 'event'):
 description = 'bag of holding bot'
 bot = commands.Bot(command_prefix='!', description=description)
 
+@bot.command()
+async def dump(ctx):
+    server = ctx.guild.name
+    try:
+        bagItem = session.query(BagItem,Bag).filter(BagItem.bag_id == Bag.id).filter(Bag.server == server).all()
+        if len(bagItem) > 1:
+            for b in bagItem:
+                session.query(BagItem).filter(BagItem.id == b.BagItem.id).delete()
+                session.commit()
+                await ctx.send('{} dropped'.format(b.BagItem.item))
+    except Exception as e:
+        await ctx.send('Could not complete your command')
+        print(e)
 
-@bot.command(pass_context=True)
+@bot.command()
 async def ping(ctx):
     author = ctx.message.author.name
     server = ctx.message.guild.name
     await ctx.send('Pong for {} from {}!'.format(author,server))
 
-@bot.command(pass_context=True)
-async def create(ctx, name: str, date: str, time: str='0:00am'):
-    '''Creates an event with the specified name and date example
-        !create party 12/22/2017 1:40pm
-    '''
+@bot.command()
+async def hold(ctx, item:str):
     server = ctx.message.guild.name
-    date_time = '{} {}'.format(date, time)
     try:
-        event_date = datetime.strptime(date_time, '%m/%d/%Y %I:%M%p')
-        event = Event(name=name, server=server,date=event_date)
-        session.add(event)
+        count = session.query(Bag).filter(Bag.server == server).count()
+        if count < 1:
+            bag = Bag(server = server)
+            session.add(bag)
+            session.commit()
+        ServerBag = session.query(Bag).filter(Bag.server == server).one()
+        bagItem = BagItem(bag_id = ServerBag.id, item = item)
+        session.add(bagItem)
         session.commit()
-        await ctx.send('Event {} created successfully for {}'.format(name,event.date))
+        await ctx.send('{} Saved'.format(item))
     except Exception as e:
         await ctx.send('Could not complete your command')
         print(e)
+
+
+@bot.command()
+async def stop(ctx):
+    await bot.logout()
 
 @bot.command()
 async def member(ctx):
@@ -61,7 +80,6 @@ async def member(ctx):
     author = ctx.message.author.name
     avatar = ctx.message.author.avatar_url
     id = ctx.message.author.id
-    print(type(id))
     try:
         count = session.query(Member).filter(Member.id == id).count()
         if count < 1:
@@ -80,10 +98,11 @@ async def list(ctx):
     '''Displays the current list of current events
         example: !list
     '''
+    server = ctx.guild.name
     try:
-        events = session.query(Event).order_by(Event.id).all()
-        headers = ['Name','Date','Server']
-        rows = [[e.name, e.date, e.server] for e in events]
+        bagitems = session.query(BagItem,Bag).filter(Bag.server == server).filter(Bag.id == BagItem.bag_id).order_by(BagItem.id).all()
+        headers = ['Item']
+        rows = [[b.BagItem.item] for b in bagitems]
         table = tabulate(rows, headers)
         await ctx.send('```\n' + table + '```')
     except Exception as e:
@@ -91,33 +110,23 @@ async def list(ctx):
         print(e)
 
 @bot.command()
-async def attend(ctx, name: str):
-    '''Allows a user to attend an upcoming event
-    example: !attend party
+async def drop(ctx, item: str):
     '''
-    author = ctx.message.author.name
-    avatar = ctx.message.author.avatar_url
-    id = ctx.message.author.id
-    print(type(id))
+        Removes an item from a bag of holding
+    '''
+    server = ctx.guild.name
     try:
-        count = session.query(Member).filter(Member.id == id).count()
-        event = session.query(Event).filter(Event.name == name).first()
-
-        if not event:
-            await ctx.send('This event does not exist')
-            return
-        
-        if count < 1:
-            member = Member(id = id, name = author, avatar = str(avatar))
-            session.add(member)
-        
-        attending = Attendance(member_id = id, event_id = event.id)
-        session.add(attending)
-        session.commit()
-        await ctx.send('Member {} is now attending event {}'.format(author, name))
+        bagItem = session.query(BagItem,Bag).filter(BagItem.bag_id == Bag.id).filter(Bag.server == server).filter(BagItem.item == item).first()
+        if len(bagItem) > 1:
+            session.query(BagItem).filter(BagItem.id == bagItem.BagItem.id).delete()
+            session.commit()
+            await ctx.send('{} dropped'.format(item))
+        else:
+            await ctx.send('{} not in bag'.format(item))
     except Exception as e:
         await ctx.send('Could not complete your command')
         print(e)
+
 @bot.event
 async def on_ready():
     print('Logged in as')
