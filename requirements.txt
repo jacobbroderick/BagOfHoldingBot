@@ -2,4 +2,4 @@ discord
 sqlalchemy
 tabulate
 pymysql
-cryptography==2.1.4
+cryptography==2.3

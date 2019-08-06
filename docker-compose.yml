@@ -7,7 +7,10 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: 'password'
+      MYSQL_DATABASE: 'bag'
+      MYSQL_USER: 'jacob'
+      MYSQL_PASSWORD: 'password'
     volumes:
       - database://C/Users/Jacob/devel/discBots/bagOHolds/data
   bot:
@@ -15,6 +18,8 @@ services:
     container_name: bagohold
     links:
       - "db:database"
+
+
     
 volumes:
   database:
